@@ -28,7 +28,7 @@ declare -A flatpak_apps=(
     ["Zen Browser"]="app.zen_browser.zen"
     ["Discord"]="com.discordapp.Discord"
     ["Blender"]="org.blender.Blender"
-    ["EasyEffects"]="com.github.wwmm.easyeffects",
+    ["EasyEffects"]="com.github.wwmm.easyeffects"
     ["Signal Messenger"]="org.signal.Signal"
     ["GIMP"]="org.gimp.GIMP"
 )
@@ -36,8 +36,11 @@ declare -A flatpak_apps=(
 # Collect apps to install
 to_flatpak=()
 install_vscode=false
+install_git=false
+install_nvm=false
+install_nodejs=false
 
-echo "📌 Select apps to install (press y/n):"
+echo "📌 Select apps/tools to install (press y/n):"
 
 # Flatpak apps
 for name in "${!flatpak_apps[@]}"; do
@@ -63,6 +66,40 @@ while true; do
     esac
 done
 
+# Git
+while true; do
+    read -n1 -rp "Do you want to install Git? [y/n]: " yn
+    echo
+    case $yn in
+        [Yy]) install_git=true; break;;
+        [Nn]) break;;
+        *) echo "Please press y or n.";;
+    esac
+done
+
+# NVM (+ optional Node.js latest)
+while true; do
+    read -n1 -rp "Do you want to install NVM (Node Version Manager)? [y/n]: " yn
+    echo
+    case $yn in
+        [Yy]) install_nvm=true; break;;
+        [Nn]) break;;
+        *) echo "Please press y or n.";;
+    esac
+done
+
+if $install_nvm; then
+    while true; do
+        read -n1 -rp "Do you also want to install the latest Node.js via NVM? [y/n]: " yn
+        echo
+        case $yn in
+            [Yy]) install_nodejs=true; break;;
+            [Nn]) break;;
+            *) echo "Please press y or n.";;
+        esac
+    done
+fi
+
 # === Install Flatpak apps ===
 if [ ${#to_flatpak[@]} -gt 0 ]; then
     echo
@@ -86,9 +123,47 @@ if $install_vscode; then
         | sudo tee /etc/yum.repos.d/vscode.repo > /dev/null
 
     # Refresh repos and install
-    sudo dnf check-update
+    sudo dnf check-update || true
     sudo dnf install -y code
 fi
 
+# === Install Git ===
+if $install_git; then
+    echo
+    echo "🔧 Installing Git..."
+    sudo dnf install -y git
+fi
+
+# === Install NVM ===
+if $install_nvm; then
+    echo
+    echo "📥 Installing NVM..."
+    
+    export NVM_DIR="$HOME/.nvm"
+
+    # Run official NVM install script if missing
+    if [ ! -d "$NVM_DIR" ]; then
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/refs/heads/master/install.sh | bash
+    fi
+
+    # Load NVM for current script
+    if [ -s "$NVM_DIR/nvm.sh" ]; then
+        \. "$NVM_DIR/nvm.sh"
+    fi
+    if [ -s "$NVM_DIR/bash_completion" ]; then
+        \. "$NVM_DIR/bash_completion"
+    fi
+
+    # Optional Node.js install
+    if $install_nodejs; then
+        echo
+        echo "🌐 Installing latest Node.js with NVM..."
+        nvm install --lts
+        nvm alias default 'lts/*'
+    fi
+fi
+
+
+
 echo
-echo "🎉 All selected apps installed successfully."
+echo "🎉 All selected apps and tools installed successfully."
