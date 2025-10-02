@@ -14,7 +14,7 @@ trap 'kill $SUDO_PID' EXIT
 # === Subscripts in manual order ===
 SCRIPTS=(
     "./scripts/01-system-setup.sh"
-    "./scripts/02-flatpak-setup.sh"
+    "./scripts/02-apps-setup.sh"
 )
 
 for script in "${SCRIPTS[@]}"; do
